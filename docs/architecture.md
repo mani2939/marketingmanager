@@ -25,7 +25,7 @@ Social OAuth, account persistence and Highlights adapters are implemented in `li
 | Instagram/Facebook | Publishing permission review, media upload, publish status and webhooks (OAuth and account mapping implemented)                                                          |
 | TikTok             | Approved Content Posting API permissions, upload/publish polling and policy checks (OAuth/Display API implemented)                                                                      |
 | Reel generation    | Input image upload to object storage, selected video provider, asynchronous render job, progress polling and media preview                                     |
-| Email              | Sender/domain verification, subscriber/consent tables, suppression list, unsubscribe tokens, campaign recipient snapshot, delivery provider and event webhooks |
+| Email              | Resend Broadcasts handle subscriber segments, unsubscribe, sending and scheduled delivery; future work includes webhook-based delivery metrics and recipient-level reporting. |
 | SEO                | Search Console OAuth/property mapping, GA4 mapping, crawler jobs restricted to verified website origins, robots/sitemap handling and snapshots                 |
 | Blogs              | Shopify/CMS credentials, destination mapping, content sanitization, draft preview and publish approval                                                         |
 

@@ -46,6 +46,7 @@ import {
 import { type ContentItem, csvCell } from "@/lib/content";
 import { sampleContent } from "@/lib/sample-data";
 import { Editor } from "./editor";
+import { EmailCampaigns } from "./email-campaigns";
 import { SocialAccounts } from "./social-accounts";
 const PerformanceChart = dynamic(
   () => import("./charts").then((m) => m.PerformanceChart),
@@ -783,16 +784,19 @@ export function Workspace({ module, demo }: { module: Module; demo: boolean }) {
                         (x) => x.kind === "email" && x.status === "planned",
                       ).length,
                     )}
-                    note="Waiting for delivery integration"
+                    note="Choose Schedule in Resend"
                     icon={CalendarDays}
                   />
                   <Stat
                     title="Delivery provider"
-                    value="Not connected"
-                    note="Connect before sending"
+                    value="Resend"
+                    note="See connection below"
                     icon={Link2}
                   />
                 </div>
+              )}
+              {module === "email" && ready && (
+                <EmailCampaigns key={site} site={site} demo={demo} items={items} />
               )}
               {module === "social" && (
                 <div className="quick-grid">
@@ -1409,13 +1413,9 @@ function Settings({ site, demo }: { site: WorkspaceId; demo: boolean }) {
         ))}
       </section>
       <SocialAccounts site={site} demo={demo} />
+      <EmailCampaigns site={site} demo={demo} compact />
       <div className="integration-grid">
         {[
-          [
-            "Email provider",
-            "Campaign delivery",
-            "Configure sender verification, consent and unsubscribe handling.",
-          ],
           [
             "Google Search Console",
             "Search performance",

@@ -69,6 +69,7 @@ test("SQL initialization is repeatable and preserves existing content", async ()
       "001_initial.sql",
       "002_admin_sessions.sql",
       "003_social_accounts.sql",
+      "004_email_broadcasts.sql",
     ]);
     await db.query(
       "INSERT INTO marketing_content(id,workspace,kind,title,channel,created_by) VALUES ($1,'foxyavenue','post','Preserve this draft','Instagram','legacy-user')",
@@ -80,7 +81,7 @@ test("SQL initialization is repeatable and preserves existing content", async ()
     );
     assert.equal(rows.rows[0].title, "Preserve this draft");
     const ledger = await db.query("SELECT name FROM strozpy_schema_migrations");
-    assert.equal(ledger.rows.length, 3);
+    assert.equal(ledger.rows.length, 4);
     await db.query(
       "INSERT INTO strozpy_sessions(token_hash,username,credential_version,expires_at) VALUES ('hashed-token','StrozpyManager','version',now()+interval '8 hours')",
     );

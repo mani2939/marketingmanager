@@ -64,16 +64,21 @@ export async function POST(request: Request) {
   const c = parsed.data;
   try {
     const sql = await readyDatabase();
-    const rows =
-      await sql`INSERT INTO marketing_content (id,workspace,kind,title,body,channel,status,scheduled_at,created_by)
-      VALUES (${c.id},${c.workspace},${c.kind},${c.title},${c.body},${c.channel},${c.status},${c.scheduledAt},${session.userId})
-      ON CONFLICT (id) DO UPDATE SET title=EXCLUDED.title,body=EXCLUDED.body,channel=EXCLUDED.channel,status=EXCLUDED.status,scheduled_at=EXCLUDED.scheduled_at,updated_at=now()
-      WHERE marketing_content.workspace=EXCLUDED.workspace AND marketing_content.kind=EXCLUDED.kind RETURNING id`;
-    if (!rows.length)
-      return Response.json(
-        { error: "Content belongs to another workspace or type." },
-        { status: 409 },
-      );
+    const result = await sql.begin(async (tx) => {
+      // Serialize saves with a send request that locks the same content row.
+      if (c.kind === "email") {
+        await tx`SELECT id FROM marketing_content WHERE id=${c.id} FOR UPDATE`;
+        const dispatched = await tx`SELECT content_id FROM email_dispatches WHERE content_id=${c.id}`;
+        if (dispatched.length) return "sent";
+      }
+      const rows = await tx`INSERT INTO marketing_content (id,workspace,kind,title,body,channel,status,scheduled_at,created_by)
+        VALUES (${c.id},${c.workspace},${c.kind},${c.title},${c.body},${c.channel},${c.status},${c.scheduledAt},${session.userId})
+        ON CONFLICT (id) DO UPDATE SET title=EXCLUDED.title,body=EXCLUDED.body,channel=EXCLUDED.channel,status=EXCLUDED.status,scheduled_at=EXCLUDED.scheduled_at,updated_at=now()
+        WHERE marketing_content.workspace=EXCLUDED.workspace AND marketing_content.kind=EXCLUDED.kind RETURNING id`;
+      return rows.length ? "saved" : "conflict";
+    });
+    if (result === "sent") return Response.json({ error: "This email was submitted to Resend and can no longer be edited. Create a new campaign." }, { status: 409 });
+    if (result === "conflict") return Response.json({ error: "Content belongs to another workspace or type." }, { status: 409 });
     return Response.json({ id: c.id });
   } catch {
     return Response.json(
