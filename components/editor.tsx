@@ -151,8 +151,8 @@ export function Editor({
             in UTC.
           </p>
           <div className="notice">
-            Planning saves a date to your calendar. Publishing and delivery
-            require a connected provider and a delivery worker.
+            Planning saves a date to your calendar. For email, use the Resend
+            controls on the Email marketing page to send or schedule delivery.
           </div>
           {error && (
             <p role="alert" className="form-error">

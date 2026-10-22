@@ -54,12 +54,12 @@ Use a separate Neon database/branch for preview environments; any configured env
 - Professional dashboard, website switching, summaries and channel connections.
 - Social draft editing, reel storyboard templates and content previews.
 - Monthly content planning calendar, with date selection and UTC storage.
-- Email campaign subject/body editing and planning.
+- Email campaign editing and Resend Broadcast send/scheduling to brand-specific subscribed segments.
 - Blog draft editing and planning.
 - SEO overview, keywords, technical and on-page UI scaffolds.
 - PostgreSQL draft persistence, search/filter controls and CSV content-plan export.
 
-This remains an application scaffold. Actual video rendering, social publishing, email sends, aggregate dashboard analytics, SEO crawling and CMS publication require further integrations. Highlights imports real post metrics from configured social accounts. “Planned” records are calendar entries, not active delivery jobs. Production analytics use empty states until providers are connected.
+This remains an application scaffold. Actual video rendering, social publishing, aggregate dashboard analytics, SEO crawling and CMS publication require further integrations. Highlights imports real post metrics from configured social accounts. “Planned” records are calendar entries, not active delivery jobs. Production analytics use empty states until providers are connected.
 
 ## Development and verification
 
@@ -82,3 +82,7 @@ See `docs/architecture.md` for provider boundaries and `docs/verification.md` fo
 ## Social connections and Highlights
 
 OAuth connections, encrypted Neon token storage and a Highlights module are implemented for Instagram, Facebook Pages, TikTok and YouTube. Configure provider apps and environment variables, then select accounts for each website and refresh their latest five posts. See [the social setup guide](docs/social-connections.md) for exact callbacks, permissions, metrics and limitations. Publishing is still separate integration work.
+
+## Resend email delivery
+
+Email marketing sends or schedules Resend Broadcasts from saved campaigns. Configure `RESEND_API_KEY`, a verified sender and subscribed segment per website, then verify the connection in Settings. The Neon dispatch ledger prevents duplicate sends and records receipts. See [the Resend setup guide](docs/resend-email.md) for exact variable names, consent handling and acceptance checks.
