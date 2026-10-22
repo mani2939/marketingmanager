@@ -59,7 +59,7 @@ Use a separate Neon database/branch for preview environments; any configured env
 - SEO overview, keywords, technical and on-page UI scaffolds.
 - PostgreSQL draft persistence, search/filter controls and CSV content-plan export.
 
-This remains an application scaffold. Actual video rendering, social publishing, email sends, live analytics, SEO crawling and CMS publication require provider integrations. “Planned” records are calendar entries, not active delivery jobs. Production analytics use empty states until providers are connected.
+This remains an application scaffold. Actual video rendering, social publishing, email sends, aggregate dashboard analytics, SEO crawling and CMS publication require further integrations. Highlights imports real post metrics from configured social accounts. “Planned” records are calendar entries, not active delivery jobs. Production analytics use empty states until providers are connected.
 
 ## Development and verification
 
@@ -78,3 +78,7 @@ Open `/sign-in` for real login; `/demo` is optional browser-local sample mode an
 The stack is Next.js 16.4.2, React 19.3.1, TypeScript 5.9.3, Node.js 24, Postgres.js, Zod and Recharts. Dependencies are pinned. Authentication uses Node's cryptographic randomness and constant-time credential comparison with database-backed opaque sessions.
 
 See `docs/architecture.md` for provider boundaries and `docs/verification.md` for checks and current access limitations.
+
+## Social connections and Highlights
+
+OAuth connections, encrypted Neon token storage and a Highlights module are implemented for Instagram, Facebook Pages, TikTok and YouTube. Configure provider apps and environment variables, then select accounts for each website and refresh their latest five posts. See [the social setup guide](docs/social-connections.md) for exact callbacks, permissions, metrics and limitations. Publishing is still separate integration work.

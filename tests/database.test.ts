@@ -65,7 +65,11 @@ test("SQL initialization is repeatable and preserves existing content", async ()
   };
   try {
     const first = await migrate(sql);
-    assert.deepEqual(first, ["001_initial.sql", "002_admin_sessions.sql"]);
+    assert.deepEqual(first, [
+      "001_initial.sql",
+      "002_admin_sessions.sql",
+      "003_social_accounts.sql",
+    ]);
     await db.query(
       "INSERT INTO marketing_content(id,workspace,kind,title,channel,created_by) VALUES ($1,'foxyavenue','post','Preserve this draft','Instagram','legacy-user')",
       ["7aacbe11-7f48-4aad-9aad-f94e9713f6cc"],
@@ -76,7 +80,7 @@ test("SQL initialization is repeatable and preserves existing content", async ()
     );
     assert.equal(rows.rows[0].title, "Preserve this draft");
     const ledger = await db.query("SELECT name FROM strozpy_schema_migrations");
-    assert.equal(ledger.rows.length, 2);
+    assert.equal(ledger.rows.length, 3);
     await db.query(
       "INSERT INTO strozpy_sessions(token_hash,username,credential_version,expires_at) VALUES ('hashed-token','StrozpyManager','version',now()+interval '8 hours')",
     );
@@ -87,6 +91,82 @@ test("SQL initialization is repeatable and preserves existing content", async ()
       (await db.query("SELECT * FROM strozpy_sessions")).rows.length,
       0,
     );
+  } finally {
+    await db.close();
+  }
+});
+
+test("social migration isolates websites, consumes OAuth state once and cascades disconnect", async () => {
+  const { PGlite } = await import("@electric-sql/pglite");
+  const db = new PGlite();
+  try {
+    await db.exec(await readFile("db/003_social_accounts.sql", "utf8"));
+    const first = "10000000-0000-4000-8000-000000000001",
+      second = "10000000-0000-4000-8000-000000000002";
+    await db.query(
+      "INSERT INTO social_accounts(id,workspace,provider,account_id,name,credentials) VALUES ($1,'foxyavenue','youtube','channel','Foxy','encrypted'),($2,'shapes-and-pieces','youtube','channel','Shapes','encrypted')",
+      [first, second],
+    );
+    await assert.rejects(() =>
+      db.query(
+        "INSERT INTO social_accounts(id,workspace,provider,account_id,name,credentials) VALUES ('10000000-0000-4000-8000-000000000003','foxyavenue','youtube','channel','Duplicate','encrypted')",
+      ),
+    );
+    for (const id of [first, second])
+      await db.query(
+        "INSERT INTO social_posts(account_id,post_id,title,published_at,metrics) VALUES ($1,'post','Title',now(),'{\"views\":0,\"likes\":null}')",
+        [id],
+      );
+    assert.equal(
+      (
+        await db.query(
+          "SELECT * FROM social_accounts WHERE workspace='foxyavenue'",
+        )
+      ).rows.length,
+      1,
+    );
+    await db.query(
+      "DELETE FROM social_accounts WHERE id=$1 AND workspace='shapes-and-pieces'",
+      [first],
+    );
+    assert.equal(
+      (await db.query("SELECT * FROM social_accounts")).rows.length,
+      2,
+    );
+    await db.query(
+      "DELETE FROM social_accounts WHERE id=$1 AND workspace='foxyavenue'",
+      [first],
+    );
+    const retained = await db.query<{ account_id: string }>(
+      "SELECT account_id FROM social_posts",
+    );
+    assert.equal(retained.rows.length, 1);
+    assert.equal(retained.rows[0].account_id, second);
+    await db.query(
+      "INSERT INTO social_oauth_flows VALUES ('state','session','foxyavenue','youtube','verifier',now()+interval '10 minutes')",
+    );
+    const consume = (session: string) =>
+      db.query(
+        "DELETE FROM social_oauth_flows WHERE state_hash='state' AND session_hash=$1 AND provider='youtube' AND expires_at>now() RETURNING *",
+        [session],
+      );
+    assert.equal((await consume("wrong-session")).rows.length, 0);
+    assert.equal((await consume("session")).rows.length, 1);
+    assert.equal((await consume("session")).rows.length, 0);
+    await db.query(
+      "INSERT INTO social_oauth_flows VALUES ('state','session','foxyavenue','youtube','verifier',now()-interval '1 minute')",
+    );
+    assert.equal((await consume("session")).rows.length, 0);
+    // Transaction rollback must preserve the prior snapshot if an import fails mid-write.
+    await assert.rejects(() =>
+      db.transaction(async (tx) => {
+        await tx.query("DELETE FROM social_posts WHERE account_id=$1", [
+          second,
+        ]);
+        throw new Error("simulated failed insert");
+      }),
+    );
+    assert.equal((await db.query("SELECT * FROM social_posts")).rows.length, 1);
   } finally {
     await db.close();
   }

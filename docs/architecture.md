@@ -18,18 +18,18 @@ List responses are capped at 1,000 records; add cursor pagination before exceedi
 
 ## Provider boundaries
 
-See `lib/providers.ts` for contracts. They describe integrations, not working provider implementations.
+Social OAuth, account persistence and Highlights adapters are implemented in `lib/social/`. See `docs/social-connections.md` for configuration, security and supported metrics. `lib/providers.ts` retains contracts for future publishing, rendering and aggregate analytics.
 
 | Capability         | Required next work                                                                                                                                             |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Instagram/Facebook | Meta OAuth, permission review, account mapping per website, media upload, publish status and webhooks                                                          |
-| TikTok             | OAuth, approved Content Posting API permissions, upload/publish polling and policy checks                                                                      |
+| Instagram/Facebook | Publishing permission review, media upload, publish status and webhooks (OAuth and account mapping implemented)                                                          |
+| TikTok             | Approved Content Posting API permissions, upload/publish polling and policy checks (OAuth/Display API implemented)                                                                      |
 | Reel generation    | Input image upload to object storage, selected video provider, asynchronous render job, progress polling and media preview                                     |
 | Email              | Sender/domain verification, subscriber/consent tables, suppression list, unsubscribe tokens, campaign recipient snapshot, delivery provider and event webhooks |
 | SEO                | Search Console OAuth/property mapping, GA4 mapping, crawler jobs restricted to verified website origins, robots/sitemap handling and snapshots                 |
 | Blogs              | Shopify/CMS credentials, destination mapping, content sanitization, draft preview and publish approval                                                         |
 
-Connections should be per website. Encrypt refresh tokens using managed keys, never store them in public environment variables or local storage. Validate OAuth state, verify webhook signatures and implement token refresh/revocation.
+Connections are website-scoped with AES-256-GCM token encryption using a server environment key. OAuth state is session-bound and single-use. Google/TikTok token refresh is implemented; disconnect removes the local connection, while full grant revocation is performed in the provider settings. Future webhooks must verify signatures.
 
 ## Actual delivery scheduling
 

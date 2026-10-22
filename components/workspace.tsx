@@ -46,6 +46,7 @@ import {
 import { type ContentItem, csvCell } from "@/lib/content";
 import { sampleContent } from "@/lib/sample-data";
 import { Editor } from "./editor";
+import { SocialAccounts } from "./social-accounts";
 const PerformanceChart = dynamic(
   () => import("./charts").then((m) => m.PerformanceChart),
   {
@@ -56,6 +57,7 @@ const PerformanceChart = dynamic(
 const nav = [
   { id: "overview", name: "Overview", icon: LayoutDashboard },
   { id: "social", name: "Social media", icon: Instagram },
+  { id: "highlights", name: "Highlights", icon: Sparkles },
   { id: "reels", name: "Reel studio", icon: Clapperboard, sub: true },
   { id: "schedule", name: "Content calendar", icon: CalendarDays, sub: true },
   { id: "email", name: "Email marketing", icon: Mail },
@@ -63,6 +65,10 @@ const nav = [
   { id: "blogs", name: "Blogs", icon: FileText },
 ] as const;
 const headings: Record<Module, [string, string]> = {
+  highlights: [
+    "Your latest moments, measured.",
+    "Five recent posts from every connected account, with real performance stats.",
+  ],
   overview: [
     "A little overview. A lot of potential.",
     "Your marketing, beautifully in sync.",
@@ -111,7 +117,9 @@ export function Workspace({ module, demo }: { module: Module; demo: boolean }) {
   const base = demo ? "/demo" : "/dashboard",
     brand = workspaces[site];
   useEffect(() => {
-    const saved = localStorage.getItem("strozpy:workspace");
+    const saved =
+      new URLSearchParams(window.location.search).get("workspace") ||
+      localStorage.getItem("strozpy:workspace");
     if (saved && isWorkspace(saved)) setSite(saved);
     setReady(true);
   }, []);
@@ -409,7 +417,8 @@ export function Workspace({ module, demo }: { module: Module; demo: boolean }) {
                   </button>
                 </>
               ) : (
-                module !== "settings" && (
+                module !== "settings" &&
+                module !== "highlights" && (
                   <button
                     className="button primary"
                     onClick={() =>
@@ -480,7 +489,7 @@ export function Workspace({ module, demo }: { module: Module; demo: boolean }) {
                 <h3>
                   At a glance{" "}
                   <span className="muted-badge">
-                    {demo ? "Sample insights" : "Awaiting connections"}
+                    {demo ? "Sample insights" : "Summary integration pending"}
                   </span>
                 </h3>
                 <label className="period">
@@ -616,8 +625,8 @@ export function Workspace({ module, demo }: { module: Module; demo: boolean }) {
                         <small>{desc}</small>
                       </div>
                       <Link href={href("settings")} className="connect-link">
-                        Connect
-                        <Plus size={12} />
+                        Manage
+                        <ArrowRight size={12} />
                       </Link>
                     </div>
                   ))}
@@ -883,7 +892,15 @@ export function Workspace({ module, demo }: { module: Module; demo: boolean }) {
           {module === "seo" && (
             <SEO demo={demo} site={site} settingsUrl={href("settings")} />
           )}
-          {module === "settings" && <Settings site={site} demo={demo} />}
+          {module === "highlights" && ready && (
+            <SocialAccounts key={site} site={site} demo={demo} highlights />
+          )}
+          {module === "social" && ready && (
+            <SocialAccounts key={site} site={site} demo={demo} />
+          )}
+          {module === "settings" && ready && (
+            <Settings key={site} site={site} demo={demo} />
+          )}
           <footer className="page-footer">
             <span>Made for your next chapter.</span>
             <span>
@@ -1391,24 +1408,9 @@ function Settings({ site, demo }: { site: WorkspaceId; demo: boolean }) {
           </div>
         ))}
       </section>
-      <div className="section-top settings-heading">
-        <h3>Make your connections</h3>
-        <span className="muted-badge">
-          FOR {workspaces[site].name.toUpperCase()}
-        </span>
-      </div>
+      <SocialAccounts site={site} demo={demo} />
       <div className="integration-grid">
         {[
-          [
-            "Instagram & Facebook",
-            "Social publishing",
-            "Meta Business permissions and OAuth are required.",
-          ],
-          [
-            "TikTok",
-            "Video publishing",
-            "Connect a TikTok developer app with approved posting access.",
-          ],
           [
             "Email provider",
             "Campaign delivery",
