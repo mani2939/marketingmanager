@@ -27,9 +27,7 @@ export interface VideoRenderProvider {
     assetUrls: string[];
     aspectRatio: "9:16";
   }): Promise<{ jobId: string }>;
-  status(
-    jobId: string,
-  ): Promise<{
+  status(jobId: string): Promise<{
     state: "queued" | "rendering" | "ready" | "failed";
     videoUrl?: string;
     error?: string;

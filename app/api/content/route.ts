@@ -1,5 +1,5 @@
 import { access } from "@/lib/auth";
-import { database } from "@/lib/db";
+import { readyDatabase, databaseConfigured } from "@/lib/db";
 import { contentSchema } from "@/lib/content";
 import { isWorkspace } from "@/lib/workspaces";
 const select = `id, workspace, kind, title, body, channel, status, scheduled_at AS "scheduledAt", updated_at AS "updatedAt"`;
@@ -10,13 +10,15 @@ export async function GET(request: Request) {
   const workspace = new URL(request.url).searchParams.get("workspace") ?? "";
   if (!isWorkspace(workspace))
     return Response.json({ error: "Unknown workspace" }, { status: 400 });
-  if (!process.env.DATABASE_URL)
+  if (!databaseConfigured())
     return Response.json(
-      { error: "Configure PostgreSQL and run the migration to save content." },
+      { error: "Connect Neon to this deployment environment to save content." },
       { status: 503 },
     );
   try {
-    const rows = await database().unsafe(
+    const rows = await (
+      await readyDatabase()
+    ).unsafe(
       `SELECT ${select} FROM marketing_content WHERE workspace = $1 ORDER BY updated_at DESC LIMIT 1000`,
       [workspace],
     );
@@ -39,9 +41,9 @@ export async function POST(request: Request) {
     return Response.json({ error: session.error }, { status: session.status });
   if (request.headers.get("origin") !== new URL(request.url).origin)
     return Response.json({ error: "Invalid request origin" }, { status: 403 });
-  if (!process.env.DATABASE_URL)
+  if (!databaseConfigured())
     return Response.json(
-      { error: "Configure PostgreSQL and run the migration to save content." },
+      { error: "Connect Neon to this deployment environment to save content." },
       { status: 503 },
     );
   const body = await request.text();
@@ -61,7 +63,7 @@ export async function POST(request: Request) {
     );
   const c = parsed.data;
   try {
-    const sql = database();
+    const sql = await readyDatabase();
     const rows =
       await sql`INSERT INTO marketing_content (id,workspace,kind,title,body,channel,status,scheduled_at,created_by)
       VALUES (${c.id},${c.workspace},${c.kind},${c.title},${c.body},${c.channel},${c.status},${c.scheduledAt},${session.userId})

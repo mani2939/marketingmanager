@@ -2,15 +2,17 @@
 
 ## Current flow
 
-The Next.js server validates the Clerk session and checks `STROZPY_ALLOWED_USER_IDS` before rendering `/dashboard/*` or responding to `/api/content`. Authorized users share access to the two workspaces. This is an internal-team model, not multi-tenant SaaS authorization.
+The Next.js server validates an opaque database session before rendering `/dashboard/*` or responding to `/api/content`. The temporary account `StrozpyManager` shares access to both workspaces. The password lives only in the server-side `STROZPY_ADMIN_PASSWORD` environment variable. A separate `SESSION_SECRET` keys the credential version stored with each session; rotation invalidates existing sessions on the new deployment.
 
-The client selects a website, fetches `/api/content?workspace=<id>`, opens an editor, validates with Zod, and POSTs the record. The server checks origin, body size, schema, workspace and channel/type compatibility, then performs a parameterized PostgreSQL upsert. Updates cannot move a record to another workspace or change its type. A failed save leaves the editor open. No provider credentials are sent to the browser.
+Login validates origin and input, increments an atomic PostgreSQL rate-limit counter, compares fixed-size credential digests in constant time and creates a random 256-bit session token. Only its hash is stored. An HttpOnly cookie holds the token, and every private request checks expiry, account and credential version against Neon. Sign-out deletes the session and clears the cookie. No authentication proxy or external identity SDK is required. Missing credentials fail closed.
 
-Clerk owns login, password/session management and identity verification. The application's allowlist owns authorization. Empty auth configuration or an empty allowlist denies private access. The optional demo is a separate route with browser-only sample state and is off by default.
+Database initialization runs before production builds and, defensively, on first database use. A transaction-level advisory lock serializes migration execution; a checksum ledger prevents repeated or mutated migrations. The runtime bundle includes SQL migration files. An existing content table is preserved. Deployment initialization fails if a connected Vercel environment cannot reach Neon.
+
+The client selects a website, fetches `/api/content?workspace=<id>`, opens an editor and POSTs the record. The server authenticates, checks origin, validates the schema and performs a parameterized upsert. Updates cannot move a record to another workspace or change its type. Failed saves leave the editor open. Provider credentials never enter the browser.
 
 ## Stored content
 
-`marketing_content`: UUID, workspace, kind (`post`, `reel`, `email`, `blog`), title, body, channel, status (`draft`, `planned`), planned timestamp in UTC, update timestamp and creating Clerk user ID. Local date inputs are converted to UTC and presented back in the browser's local time zone. Existing past planned records remain visible but must be assigned a future date when replanned.
+`marketing_content`: UUID, workspace, kind (`post`, `reel`, `email`, `blog`), title, body, channel, status (`draft`, `planned`), planned timestamp in UTC, update timestamp and creating account ID (legacy Clerk IDs remain valid historical data). Local date inputs are converted to UTC and presented back in the browser's local time zone. Existing past planned records remain visible but must be assigned a future date when replanned.
 
 List responses are capped at 1,000 records; add cursor pagination before exceeding this. Last-write-wins editing is sufficient for the scaffold; add a revision column and conditional writes before collaborative editing. Draft deletion, file upload, rich text and version history are intentionally future work.
 
@@ -39,4 +41,4 @@ Use a protected scheduler endpoint, validate the scheduler's server secret, and 
 
 ## Production hardening for the next phase
 
-Add durable audit logs, shared rate limiting for write/publish actions, optimistic concurrency, automated retention, structured server error logs with safe request IDs, database backups, key rotation and monitoring. Add integration tests against a disposable real PostgreSQL database and a Clerk test instance. Evolve the static allowlist into workspace membership/roles if access should differ by website.
+Add durable audit logs, shared rate limiting for write/publish actions, optimistic concurrency, automated retention, structured server error logs with safe request IDs, database backups, key rotation and monitoring. Add integration tests against a disposable real PostgreSQL database and configured administrator secrets. Evolve the shared administrator account into individual accounts and workspace membership/roles if access should differ by website.

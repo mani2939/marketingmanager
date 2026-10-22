@@ -1,4 +1,4 @@
--- Run once before enabling draft persistence. Idempotent; never runs during builds.
+-- Idempotent initial application schema; existing content is preserved.
 CREATE TABLE IF NOT EXISTS marketing_content (
   id uuid PRIMARY KEY,
   workspace text NOT NULL CHECK (workspace IN ('shapes-and-pieces', 'foxyavenue')),

@@ -2324,3 +2324,54 @@ td:first-child {
 .channel-row strong {
   font-size: 12px;
 }
+
+.admin-login {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.admin-login > label {
+  font-size: 12px;
+  color: #7e6c8a;
+  margin-top: 5px;
+}
+.admin-login input {
+  width: 100%;
+  border: 1px solid #e2d9eb;
+  border-radius: 8px;
+  padding: 13px;
+  font-size: 14px;
+  color: #544260;
+  background: #fff;
+}
+.password-field {
+  position: relative;
+}
+.password-field input {
+  padding-right: 45px;
+}
+.password-field button {
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  background: transparent;
+  border: 0;
+  padding: 7px;
+  color: #9e87af;
+}
+.admin-login > .button {
+  margin-top: 12px;
+  font-size: 12px;
+  padding: 14px;
+}
+.admin-login > small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #93809f;
+  margin-top: 8px;
+}
+.profile > div:last-child {
+  margin-left: auto;
+}

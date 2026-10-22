@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { UserButton } from "@clerk/nextjs";
+import { LogoutButton } from "./logout-button";
 import { useEffect, useState } from "react";
 import {
   Activity,
@@ -332,16 +332,18 @@ export function Workspace({ module, demo }: { module: Module; demo: boolean }) {
             <ArrowUpRight size={14} />
           </button>
           <div className="profile">
-            {demo ? <span className="user-avatar">MA</span> : <UserButton />}
+            <span className="user-avatar">{demo ? "MA" : "SM"}</span>
             <div>
-              <strong>{demo ? "Manish Arora" : "Your account"}</strong>
+              <strong>{demo ? "Manish Arora" : "StrozpyManager"}</strong>
               <small>{demo ? "Sample workspace" : "Strozpy Limited"}</small>
             </div>
             {demo ? (
               <Link href="/sign-in" aria-label="Go to sign in">
                 <MoreHorizontal size={18} />
               </Link>
-            ) : null}
+            ) : (
+              <LogoutButton />
+            )}
           </div>
         </div>
       </aside>
@@ -1456,7 +1458,7 @@ function Settings({ site, demo }: { site: WorkspaceId; demo: boolean }) {
         <ShieldLabel />{" "}
         {demo
           ? "You are exploring a public sample workspace. No accounts are connected."
-          : "Workspace access is restricted to authorized Clerk user IDs. Provider credentials stay on the server."}
+          : "Workspace access is protected by the administrator login. Passwords and provider credentials stay on the server."}
       </div>
     </>
   );

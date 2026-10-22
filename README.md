@@ -1,82 +1,80 @@
 # Strozpy Limited Marketing Manager
 
-A professional, responsive marketing workspace for **Foxyavenue** (`www.foxyavenue.com`) and **Shapes and Pieces** (`www.shapesandpieces.com`). Built for Vercel with Next.js App Router, React, strict TypeScript, Clerk authentication and PostgreSQL content storage.
+A responsive Next.js marketing workspace for **Foxyavenue** (`www.foxyavenue.com`) and **Shapes and Pieces** (`www.shapesandpieces.com`).
 
-## What is implemented
+## Deployment fix
 
-- A light, purple-accented dashboard inspired by the supplied reference, with channel cards, summary tiles, performance charts, upcoming content and quick actions.
-- Persistent website selection and separate content records for each website.
-- Social content editing, reel storyboard templates and text previews.
-- A monthly content calendar with previous/next/today controls. Clicking a date preselects that date in the editor.
+The reported `STATIC_BUILD_NO_OUT_DIR` error occurred because Vercel expected a static `public` output directory after a successful Next.js build. The repository now pins the deployment configuration in `vercel.json`:
+
+- Framework: `nextjs`
+- Install: `npm ci`
+- Build: `npm run build`
+- Output: `.next`
+
+This overrides the corresponding project settings. Do not change this application to a static export: authentication, API routes and database access require a server runtime. Keep the Vercel project's root directory at the repository root and Node.js at 24.x.
+
+## Administrator login
+
+The temporary internal administrator account is **`StrozpyManager`**. Clerk is no longer required.
+
+Set these variables in Vercel for the environments you deploy:
+
+| Variable                 | Value                                                                   |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `STROZPY_ADMIN_PASSWORD` | Your chosen strong password, at least 12 characters                     |
+| `SESSION_SECRET`         | An independent random secret, at least 32 characters                    |
+| `DATABASE_URL`           | Neon pooled URL, normally injected by the Neon integration              |
+| `DATABASE_URL_UNPOOLED`  | Optional Neon direct URL for deployment migrations                      |
+| `ENABLE_DEMO`            | `false` normally; optional `true` enables the separate sample workspace |
+
+`POSTGRES_URL` / `POSTGRES_PRISMA_URL` and `POSTGRES_URL_NON_POOLING` are supported fallbacks for existing integrations. Do not manually overwrite Neon-managed values. No password or secret is hardcoded, printed in logs or exposed via `NEXT_PUBLIC_` variables.
+
+To change the password, update `STROZPY_ADMIN_PASSWORD` in Vercel and **redeploy**. Changing either the password or `SESSION_SECRET` invalidates older sessions on the new deployment. Old deployment URLs retain their deployment environment until deleted or protected; keep Vercel deployment protection enabled.
+
+Sessions last eight hours and use 256-bit random tokens in HttpOnly, SameSite=Lax cookies (Secure and `__Host-` prefixed in production). Only token hashes are stored in Neon. Sign-out revokes the current session in the database. Login attempts use a database-backed account limit of 10 attempts per 15 minutes, shared across function instances. After a successful login the counter resets. This is a single shared admin account with access to both brands, not individual team accounts or MFA.
+
+If password/secret variables are missing, the app builds but login stays disabled. If Neon is missing or migrations fail on Vercel, deployment fails with a clear initialization error.
+
+## Automatic Neon initialization
+
+`npm run build` runs the migration runner **before** `next build`. Vercel supplies the connected database variables. The runner:
+
+1. Uses a direct Neon URL when available, otherwise the pooled connection.
+2. Serializes concurrent initialization with a PostgreSQL transaction advisory lock.
+3. Applies pending SQL files from `db/` in order in a transaction.
+4. Records migration checksums in `strozpy_schema_migrations`.
+5. Leaves existing content intact and skips already-applied migrations.
+
+The migrations create `marketing_content`, `strozpy_sessions`, `strozpy_login_limits` and the migration ledger. Existing `marketing_content` tables from the original scaffold are preserved. The first authenticated/login request also runs the same idempotent initialization as recovery if a deployment bypassed the build command. SQL files are explicitly included in Vercel's traced function bundles.
+
+Use a separate Neon database/branch for preview environments; any configured environment runs its own initialization. Missing databases are skipped only in local development or CI outside Vercel, allowing secret-free build checks. To run manually: `npm run db:migrate`.
+
+## Included modules
+
+- Professional dashboard, website switching, summaries and channel connections.
+- Social draft editing, reel storyboard templates and content previews.
+- Monthly content planning calendar, with date selection and UTC storage.
 - Email campaign subject/body editing and planning.
 - Blog draft editing and planning.
-- SEO overview, keyword, technical and on-page UI scaffolds.
-- Draft creation, editing, filtering, search, reload persistence and CSV content-plan export.
-- Protected pages/API, a server-side user allowlist, request validation and database migration.
-- Responsive navigation, native accessible editor dialogs, loading/error/empty states and feedback notifications.
+- SEO overview, keywords, technical and on-page UI scaffolds.
+- PostgreSQL draft persistence, search/filter controls and CSV content-plan export.
 
-**This is a UI and application foundation.** Reel video rendering, social publishing, email sends, subscriber management, real analytics, live SEO audits and CMS publication are not implemented. “Planned” means a calendar record, not an active delivery job. Connections are explicitly shown as unconnected. Production analytics show empty states, not sample numbers.
+This remains an application scaffold. Actual video rendering, social publishing, email sends, live analytics, SEO crawling and CMS publication require provider integrations. “Planned” records are calendar entries, not active delivery jobs. Production analytics use empty states until providers are connected.
 
-## Technology
-
-Versions were resolved against npm's stable tags during implementation and pinned in `package.json` and `package-lock.json`. Next.js **16.4.2**, React **19.3.1**, Node.js **24**, compatible TypeScript **5.9.3**, Clerk Next.js **7.9.19**, Recharts, Lucide, Zod and Postgres.js. TypeScript 7 was available but not adopted; the compatible 5.9 line was selected deliberately.
-
-## Local development
+## Development and verification
 
 ```bash
 npm ci
 cp .env.example .env.local
-# Set ENABLE_DEMO=true to explore the separate sample workspace.
+# Set local credentials and a separate development database, or ENABLE_DEMO=true.
 npm run dev
+npm test
+npm run typecheck
+npm run build
 ```
 
-Open `http://localhost:3000/sign-in`. The optional sample workspace lives at `/demo`. No login credentials are hardcoded. Without auth configuration `/dashboard` redirects to sign-in and private API calls fail closed.
+Open `/sign-in` for real login; `/demo` is optional browser-local sample mode and never accesses private content APIs. Without `ENABLE_DEMO=true`, demo routes return 404. GitHub Actions runs tests, strict TypeScript checks and production compilation.
 
-Sample mode uses only browser-local storage under `strozpy:demo:v1:<workspace>`. It never calls the private content API, sends marketing messages or accesses connected accounts. Set `ENABLE_DEMO=false` (the default) to return 404 for all demo routes. Clear those local-storage keys to reset sample content. Workspace preference uses `strozpy:workspace`.
+The stack is Next.js 16.4.2, React 19.3.1, TypeScript 5.9.3, Node.js 24, Postgres.js, Zod and Recharts. Dependencies are pinned. Authentication uses Node's cryptographic randomness and constant-time credential comparison with database-backed opaque sessions.
 
-## Vercel deployment
-
-1. Import `mani2939/marketingmanager` in Vercel. Choose the **Next.js** preset, repository root and **Node.js 24.x**. Default install/build/output detection is sufficient; no custom Vercel configuration is needed.
-2. Create a Clerk application and enable the required sign-in methods. For an internal tool, disable public sign-up / use invitations. Configure production domain and authorized redirect URLs in Clerk.
-3. Set these Vercel environment variables:
-
-| Variable                                          | Purpose                                                            |
-| ------------------------------------------------- | ------------------------------------------------------------------ |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`               | Clerk application publishable key                                  |
-| `CLERK_SECRET_KEY`                                | Server-side Clerk secret                                           |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL`                   | `/sign-in`                                                         |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` | `/dashboard`                                                       |
-| `STROZPY_ALLOWED_USER_IDS`                        | Comma-separated authorized Clerk user IDs; empty denies all access |
-| `DATABASE_URL`                                    | Pooled PostgreSQL connection URL with TLS, e.g. from Neon          |
-| `ENABLE_DEMO`                                     | Optional `true`; otherwise omit or set `false`                     |
-
-4. Run the idempotent migration against the chosen database using `npm run db:migrate`. Locally it reads `.env.local`; in CI provide `DATABASE_URL` as a secret. Migrations are deliberately separate from builds to avoid accidental changes from preview deployments.
-5. Deploy. Create/invite your own user in Clerk and place its `user_...` ID in `STROZPY_ALLOWED_USER_IDS`, then redeploy. Authorized users can access both brand workspaces.
-6. Verify sign-in, rejection of an unauthorized user, save/reload of a draft, brand isolation and sign-out. Configure separate preview and production Clerk apps/databases where appropriate.
-
-Clerk and database accounts were not provisioned during scaffolding. An account connection is required to activate real sign-in and durable storage. If deployment succeeds with missing variables, the UI shows a setup state and private data remains inaccessible.
-
-## Commands
-
-```bash
-npm run dev         # Next.js development server
-npm run typecheck   # Strict TypeScript checks
-npm test            # Content validation and CSV safety tests
-npm run build       # Production build
-npm start           # Production server after build
-npm run db:migrate  # Apply db/001_initial.sql
-```
-
-GitHub Actions runs installation, tests, type checking and the production build on pushes and pull requests.
-
-## Design and extension notes
-
-- `components/workspace.tsx` contains the workspace shell and module views; `components/editor.tsx` owns the draft/plan editor; charts are loaded separately.
-- `lib/workspaces.ts` is the canonical brand registry.
-- `app/api/content/route.ts` reads and upserts authenticated content, always scoped to a validated workspace.
-- `db/001_initial.sql` is the initial schema.
-- `docs/architecture.md` describes provider contracts, delivery design and next-phase integration work.
-- `docs/verification.md` records the checks performed and their limits.
-- Typography uses DM Sans / Manrope via Google Fonts CSS, with local system fallbacks; no network fetch is needed during builds.
-
-No website, customer, social or analytics data is imported automatically. Neither website's existing storefront is modified by this project.
+See `docs/architecture.md` for provider boundaries and `docs/verification.md` for checks and current access limitations.

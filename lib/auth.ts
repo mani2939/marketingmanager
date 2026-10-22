@@ -1,33 +1,46 @@
 import "server-only";
-import { auth } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
+import { readyDatabase } from "@/lib/db";
+import {
+  ADMIN_USERNAME,
+  SESSION_COOKIE,
+  authenticationConfig,
+  credentialVersion,
+  sessionHash,
+  validSessionToken,
+} from "@/lib/auth-policy";
 export function authConfigured() {
-  return Boolean(
-    process.env.CLERK_SECRET_KEY &&
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-  );
-}
-export function allowedUser(userId: string) {
-  return (process.env.STROZPY_ALLOWED_USER_IDS ?? "")
-    .split(",")
-    .map((x) => x.trim())
-    .filter(Boolean)
-    .includes(userId);
+  return Boolean(authenticationConfig());
 }
 export async function access() {
-  if (!authConfigured())
+  const config = authenticationConfig();
+  if (!config)
     return {
       ok: false as const,
       status: 503,
-      error: "Authentication has not been configured.",
+      error: "Administrator login has not been configured.",
     };
-  const { userId } = await auth();
-  if (!userId)
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token || !validSessionToken(token))
     return { ok: false as const, status: 401, error: "Please sign in." };
-  if (!allowedUser(userId))
+  try {
+    const sql = await readyDatabase();
+    const rows =
+      await sql`SELECT username FROM strozpy_sessions WHERE token_hash=${sessionHash(token)} AND username=${ADMIN_USERNAME} AND credential_version=${credentialVersion(config.password, config.secret)} AND expires_at > now()`;
+    if (!rows.length)
+      return {
+        ok: false as const,
+        status: 401,
+        error: "Your session has expired. Please sign in.",
+      };
+    return { ok: true as const, userId: ADMIN_USERNAME };
+  } catch {
+    console.error("Session verification failed: database unavailable.");
     return {
       ok: false as const,
-      status: 403,
-      error: "Your account has not been granted workspace access.",
+      status: 503,
+      error:
+        "The workspace database is temporarily unavailable. Please try again.",
     };
-  return { ok: true as const, userId };
+  }
 }

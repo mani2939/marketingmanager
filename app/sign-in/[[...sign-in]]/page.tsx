@@ -1,4 +1,4 @@
-import { SignIn } from "@clerk/nextjs";
+import { LoginForm } from "@/components/login-form";
 import Link from "next/link";
 import { Sparkles, ArrowUpRight, Layers3, ShieldCheck } from "lucide-react";
 import { authConfigured } from "@/lib/auth";
@@ -43,23 +43,7 @@ export default function Login() {
           <span className="eyebrow">YOUR NEXT CHAPTER</span>
           <h2>Welcome back.</h2>
           <p>Sign in to your marketing workspace.</p>
-          {authConfigured() ? (
-            <SignIn
-              routing="path"
-              path="/sign-in"
-              fallbackRedirectUrl="/dashboard"
-            />
-          ) : (
-            <div className="setup-card">
-              <ShieldCheck />
-              <h3>Set up secure sign-in</h3>
-              <p>
-                Connect Clerk and authorize your account using the deployment
-                guide in the repository. Your workspace stays protected until
-                setup is complete.
-              </p>
-            </div>
-          )}
+          <LoginForm configured={authConfigured()} />
           {process.env.ENABLE_DEMO === "true" && (
             <Link className="button secondary demo-link" href="/demo">
               Explore the sample workspace <ArrowUpRight size={16} />
