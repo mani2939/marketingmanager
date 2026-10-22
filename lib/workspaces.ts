@@ -21,6 +21,7 @@ export function isWorkspace(value: string): value is WorkspaceId {
 export const modules = [
   "overview",
   "social",
+  "highlights",
   "reels",
   "schedule",
   "email",
