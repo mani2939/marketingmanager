@@ -47,6 +47,7 @@ import { type ContentItem, csvCell } from "@/lib/content";
 import { sampleContent } from "@/lib/sample-data";
 import { Editor } from "./editor";
 import { EmailCampaigns } from "./email-campaigns";
+import { UgcStudio } from "./ugc-studio";
 import { SocialAccounts } from "./social-accounts";
 const PerformanceChart = dynamic(
   () => import("./charts").then((m) => m.PerformanceChart),
@@ -79,8 +80,8 @@ const headings: Record<Module, [string, string]> = {
     "Your social presence, all in one place.",
   ],
   reels: [
-    "Small stories. Lasting impressions.",
-    "Turn a product into a story worth watching.",
+    "Make the product the story.",
+    "Create and review product video clips for your social channels.",
   ],
   schedule: [
     "Good things, planned ahead.",
@@ -724,49 +725,7 @@ export function Workspace({ module, demo }: { module: Module; demo: boolean }) {
                   )}
                 </span>
               </div>
-              {module === "reels" && (
-                <div className="template-grid">
-                  {[
-                    [
-                      "Product spotlight",
-                      "Let the details do the talking.",
-                      "15 seconds · 3 scenes",
-                      "rose",
-                    ],
-                    [
-                      "The styling edit",
-                      "One piece. A whole new perspective.",
-                      "30 seconds · 5 scenes",
-                      "lilac",
-                    ],
-                    [
-                      "Behind the pieces",
-                      "A little story behind the sparkle.",
-                      "20 seconds · 4 scenes",
-                      "sand",
-                    ],
-                  ].map(([title, desc, time, color]) => (
-                    <button
-                      className={`template-card ${color}`}
-                      key={title}
-                      onClick={() => create("reel", title)}
-                    >
-                      <span className="template-tag">STORYBOARD TEMPLATE</span>
-                      <div className="template-art">
-                        <span>✧</span>
-                        <span>◌</span>
-                        <span>✧</span>
-                      </div>
-                      <h3>{title}</h3>
-                      <p>{desc}</p>
-                      <footer>
-                        {time}
-                        <ArrowUpRight size={18} />
-                      </footer>
-                    </button>
-                  ))}
-                </div>
-              )}
+              {module === "reels" && ready && <UgcStudio key={site} site={site} demo={demo} />}
               {module === "email" && (
                 <div className="stats-grid three">
                   <Stat
