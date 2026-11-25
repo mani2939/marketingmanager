@@ -52,14 +52,14 @@ Use a separate Neon database/branch for preview environments; any configured env
 ## Included modules
 
 - Professional dashboard, website switching, summaries and channel connections.
-- Social draft editing, reel storyboard templates and content previews.
+- Social draft editing, UGC video concept creation, generated product clips and content previews.
 - Monthly content planning calendar, with date selection and UTC storage.
 - Email campaign editing and Resend Broadcast send/scheduling to brand-specific subscribed segments.
 - Blog draft editing and planning.
 - SEO overview, keywords, technical and on-page UI scaffolds.
 - PostgreSQL draft persistence, search/filter controls and CSV content-plan export.
 
-This remains an application scaffold. Actual video rendering, social publishing, aggregate dashboard analytics, SEO crawling and CMS publication require further integrations. Highlights imports real post metrics from configured social accounts. “Planned” records are calendar entries, not active delivery jobs. Production analytics use empty states until providers are connected.
+Video generation uses Muapi and Vercel Blob when configured. Social publishing, aggregate dashboard analytics, SEO crawling and CMS publication require further integrations. Highlights imports real post metrics from configured social accounts. “Planned” records are calendar entries, not active delivery jobs. Production analytics use empty states until providers are connected.
 
 ## Development and verification
 
@@ -75,7 +75,7 @@ npm run build
 
 Open `/sign-in` for real login; `/demo` is optional browser-local sample mode and never accesses private content APIs. Without `ENABLE_DEMO=true`, demo routes return 404. GitHub Actions runs tests, strict TypeScript checks and production compilation.
 
-The stack is Next.js 16.4.2, React 19.3.1, TypeScript 5.9.3, Node.js 24, Postgres.js, Zod and Recharts. Dependencies are pinned. Authentication uses Node's cryptographic randomness and constant-time credential comparison with database-backed opaque sessions.
+The stack is Next.js 16.4.6, React 19.3.1, TypeScript 5.9.3, Node.js 24, Postgres.js, Zod and Recharts. Dependencies are pinned. Authentication uses Node's cryptographic randomness and constant-time credential comparison with database-backed opaque sessions.
 
 See `docs/architecture.md` for provider boundaries and `docs/verification.md` for checks and current access limitations.
 
@@ -86,3 +86,7 @@ OAuth connections, encrypted Neon token storage and a Highlights module are impl
 ## Resend email delivery
 
 Email marketing sends or schedules Resend Broadcasts from saved campaigns. Configure `RESEND_API_KEY`, a verified sender and subscribed segment per website, then verify the connection in Settings. The Neon dispatch ledger prevents duplicate sends and records receipts. See [the Resend setup guide](docs/resend-email.md) for exact variable names, consent handling and acceptance checks.
+
+## UGC product video studio
+
+The Reel studio can save concepts, generate 5-second vertical product clips through Muapi, poll progress, and save finished MP4 files to Vercel Blob. Hooks, voiceover scripts and post captions are saved per website. This first release prepares media for manual editing and posting; TikTok/Instagram direct posting is a later provider-permission integration. See [setup and workflow](docs/ugc-video-studio.md).
