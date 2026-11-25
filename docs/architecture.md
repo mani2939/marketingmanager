@@ -24,7 +24,7 @@ Social OAuth, account persistence and Highlights adapters are implemented in `li
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Instagram/Facebook | Publishing permission review, media upload, publish status and webhooks (OAuth and account mapping implemented)                                                          |
 | TikTok             | Approved Content Posting API permissions, upload/publish polling and policy checks (OAuth/Display API implemented)                                                                      |
-| Reel generation    | Muapi image-to-video submit/poll, Neon jobs, and Vercel Blob storage are implemented; next: source image upload, multi-shot editing, voiceover and captions in output |
+| Reel generation    | Muapi image-to-video submit/poll, Neon jobs, authenticated source photo upload and Vercel Blob storage are implemented; next: multi-shot editing, voiceover and captions in output |
 | Email              | Resend Broadcasts handle subscriber segments, unsubscribe, sending and scheduled delivery; future work includes webhook-based delivery metrics and recipient-level reporting. |
 | SEO                | Search Console OAuth/property mapping, GA4 mapping, crawler jobs restricted to verified website origins, robots/sitemap handling and snapshots                 |
 | Blogs              | Shopify/CMS credentials, destination mapping, content sanitization, draft preview and publish approval                                                         |

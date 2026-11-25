@@ -44,13 +44,25 @@ export function UgcStudio({site,demo}:{site:WorkspaceId;demo:boolean}) {
     finally{setBusy("");}
   }
   async function copy(value:string){try{await navigator.clipboard.writeText(value);setNotice("Copied to clipboard.");}catch{setError("Clipboard unavailable; select and copy the text instead.");}}
+  async function uploadPhoto(file:File){
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>10*1024*1024){setError("Choose a JPEG, PNG or WebP image under 10 MB.");return;}
+    setBusy("upload");setError("");setNotice("");
+    try{
+      const {upload}=await import("@vercel/blob/client");
+      const extension=file.type==='image/jpeg'?"jpg":file.type==='image/png'?"png":"webp";
+      const blob=await upload(`ugc-source/${site}/${crypto.randomUUID()}.${extension}`,file,{access:"public",handleUploadUrl:"/api/ugc/upload",clientPayload:site});
+      setForm(f=>({...f,imageUrl:blob.url}));setNotice("Product photo uploaded. Save the concept when the text is ready.");
+    }catch{setError("Photo upload failed. Check the Vercel Blob connection or paste a public image URL.");}
+    finally{setBusy("");}
+  }
   return <section className="ugc-studio">
     <div className="ugc-hero"><div><span className="eyebrow">{workspaces[site].name.toUpperCase()} · CREATOR STUDIO</span><h3>From product photo to social clip</h3><p>Start with your real product image. Shape a natural UGC moment, generate a vertical video, review it, then prepare your TikTok and Instagram post.</p></div><div className="ugc-hero-icon"><Film size={42}/></div></div>
     <div className="ugc-steps"><span><b>01</b> Product photo</span><span><b>02</b> UGC concept</span><span><b>03</b> Generate & review</span><span><b>04</b> Post to socials</span></div>
     <div className="ugc-layout"><div className="card ugc-form"><h3><ImagePlus size={20}/> Create a concept</h3><p>Use a public HTTPS image link. A portrait product image gives the best 9:16 result.</p>
       <div className="ugc-presets" aria-label="Creative starting points">{presets.map(p=><button type="button" key={p.name} onClick={()=>setForm(f=>({...f,hook:p.hook,motionPrompt:p.prompt,voiceover:p.voice}))}>{p.name}</button>)}</div>
       <label>Product name<input value={form.title} maxLength={120} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="e.g. Gold layered necklace"/></label>
-      <label>Product image URL<input type="url" value={form.imageUrl} onChange={e=>setForm(f=>({...f,imageUrl:e.target.value}))} placeholder="https://foxyavenue.com/.../product.jpg"/></label>
+      <label>Upload product photo<input type="file" accept="image/jpeg,image/png,image/webp" disabled={demo||Boolean(busy)} onChange={e=>{const file=e.target.files?.[0];if(file)void uploadPhoto(file);e.currentTarget.value="";}}/></label>
+      <label>Or paste a public image URL<input type="url" value={form.imageUrl} onChange={e=>setForm(f=>({...f,imageUrl:e.target.value}))} placeholder="https://foxyavenue.com/.../product.jpg"/></label>
       {form.imageUrl.startsWith('https://')&&<div className="ugc-image-preview"><img src={form.imageUrl} alt="Product source preview" onError={e=>{e.currentTarget.style.display='none'}}/></div>}
       <label>Opening hook<input value={form.hook} maxLength={300} onChange={e=>setForm(f=>({...f,hook:e.target.value}))}/></label>
       <label>Motion direction<textarea rows={4} maxLength={1500} value={form.motionPrompt} onChange={e=>setForm(f=>({...f,motionPrompt:e.target.value}))}/></label>
